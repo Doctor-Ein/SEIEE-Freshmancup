@@ -14,34 +14,34 @@ from amazon_transcribe.model import TranscriptEvent, TranscriptResultStream
 
 from api_request_schema import api_request_list, get_model_ids
 
-model_id = os.getenv('MODEL_ID', 'meta.llama3-70b-instruct-v1')
-aws_region = os.getenv('AWS_REGION', 'us-east-1')
+# model_id = os.getenv('MODEL_ID', 'meta.llama3-70b-instruct-v1')
+# aws_region = os.getenv('AWS_REGION', 'us-east-1')
 
-if model_id not in get_model_ids():
-    print(f'Error: Models ID {model_id} in not a valid model ID. Set MODEL_ID env var to one of {get_model_ids()}.')
-    sys.exit(0)
+# if model_id not in get_model_ids():
+#     print(f'Error: Models ID {model_id} in not a valid model ID. Set MODEL_ID env var to one of {get_model_ids()}.')
+#     sys.exit(0)
 
-api_request = api_request_list[model_id]
-config = {
-    'log_level': 'none',  # One of: info, debug, none
-    #'last_speech': "If you have any other questions, please don't hesitate to ask. Have a great day!",
-    'region': aws_region,
-    'polly': {
-        'Engine': 'neural',
-        'LanguageCode': 'cmn-CN',
-        'VoiceId': 'Zhiyu',
-        'OutputFormat': 'pcm',
-    },
-    'bedrock': {
-        'api_request': api_request
-    }
-}
+# api_request = api_request_list[model_id]
+# config = {
+#     'log_level': 'none',  # One of: info, debug, none
+#     #'last_speech': "If you have any other questions, please don't hesitate to ask. Have a great day!",
+#     'region': aws_region,
+#     'polly': {
+#         'Engine': 'neural',
+#         'LanguageCode': 'cmn-CN',
+#         'VoiceId': 'Zhiyu',
+#         'OutputFormat': 'pcm',
+#     },
+#     'bedrock': {
+#         'api_request': api_request
+#     }
+# }
 
 
-p = pyaudio.PyAudio()
-bedrock_runtime = boto3.client(service_name='bedrock-runtime', region_name=config['region'])
-polly = boto3.client('polly', region_name=config['region'])
-transcribe_streaming = TranscribeStreamingClient(region=config['region'])
+# p = pyaudio.PyAudio()
+# bedrock_runtime = boto3.client(service_name='bedrock-runtime', region_name=config['region'])
+# polly = boto3.client('polly', region_name=config['region'])
+# transcribe_streaming = TranscribeStreamingClient(region=config['region'])
 
 
 def printer(text, level):
@@ -389,36 +389,95 @@ class MicStream:
         await stream.input_stream.end_stream()
 
     async def basic_transcribe(self):
+        ## 设置执行器？
         loop.run_in_executor(ThreadPoolExecutor(max_workers=1), UserInputManager.start_user_input_loop)
 
-        stream = await transcribe_streaming.start_stream_transcription(
+        ## 调用transcribe进行语音识别
+        stream = await transcribe_streaming.start_stream_transcription( 
             language_code="zh-CN",
             media_sample_rate_hz=16000,
             media_encoding="pcm",
         )
 
+        ## 处理语音识别的结果
         handler = EventHandler(stream.output_stream, BedrockWrapper())
         await asyncio.gather(self.write_chunks(stream), handler.handle_events())
 
 
-info_text = f'''
-*************************************************************
-[INFO] Supported FM models: {get_model_ids()}.
-[INFO] Change FM model by setting <MODEL_ID> environment variable. Example: export MODEL_ID=meta.llama2-70b-chat-v1
+# info_text = f'''
+# *************************************************************
+# [INFO] Supported FM models: {get_model_ids()}.
+# [INFO] Change FM model by setting <MODEL_ID> environment variable. Example: export MODEL_ID=meta.llama2-70b-chat-v1
 
-[INFO] AWS Region: {config['region']}
-[INFO] Amazon Bedrock model: {config['bedrock']['api_request']['modelId']}
-[INFO] Polly config: engine {config['polly']['Engine']}, voice {config['polly']['VoiceId']}
-[INFO] Log level: {config['log_level']}
+# [INFO] AWS Region: {config['region']}
+# [INFO] Amazon Bedrock model: {config['bedrock']['api_request']['modelId']}
+# [INFO] Polly config: engine {config['polly']['Engine']}, voice {config['polly']['VoiceId']}
+# [INFO] Log level: {config['log_level']}
 
-[INFO] Hit ENTER to interrupt Amazon Bedrock. After you can continue speaking!
-[INFO] Go ahead with the voice chat with Amazon Bedrock!
-*************************************************************
-'''
-print(info_text)
+# [INFO] Hit ENTER to interrupt Amazon Bedrock. After you can continue speaking!
+# [INFO] Go ahead with the voice chat with Amazon Bedrock!
+# *************************************************************
+# '''
+# print(info_text)
 
-loop = asyncio.get_event_loop()
-try:
-    loop.run_until_complete(MicStream().basic_transcribe())
-except (KeyboardInterrupt, Exception) as e:
-    print()
+# loop = asyncio.get_event_loop()
+# try:
+#     loop.run_until_complete(MicStream().basic_transcribe())
+# except (KeyboardInterrupt, Exception) as e:
+#     print()
+
+if __name__ == "__main__":
+    ## 基础参数配置
+    model_id = os.getenv('MODEL_ID', 'meta.llama3-70b-instruct-v1')
+    aws_region = os.getenv('AWS_REGION', 'us-east-1')
+
+    if model_id not in get_model_ids():
+        print(f'Error: Models ID {model_id} in not a valid model ID. Set MODEL_ID env var to one of {get_model_ids()}.')
+        sys.exit(0)
+
+    api_request = api_request_list[model_id]
+    config = {
+        'log_level': 'none',  # One of: info, debug, none
+        #'last_speech': "If you have any other questions, please don't hesitate to ask. Have a great day!",
+        'region': aws_region,
+        'polly': {
+            'Engine': 'neural',
+            'LanguageCode': 'cmn-CN',
+            'VoiceId': 'Zhiyu',
+            'OutputFormat': 'pcm',
+        },
+        'bedrock': {
+            'api_request': api_request
+        }
+    }
+
+    ## 实例化的服务
+    p = pyaudio.PyAudio()
+    bedrock_runtime = boto3.client(service_name='bedrock-runtime', region_name=config['region'])
+    polly = boto3.client('polly', region_name=config['region'])
+    transcribe_streaming = TranscribeStreamingClient(region=config['region'])
+
+    ## 输出信息文本
+    info_text = f'''
+    *************************************************************
+    [INFO] Supported FM models: {get_model_ids()}.
+    [INFO] Change FM model by setting <MODEL_ID> environment variable. Example: export MODEL_ID=meta.llama2-70b-chat-v1
+
+    [INFO] AWS Region: {config['region']}
+    [INFO] Amazon Bedrock model: {config['bedrock']['api_request']['modelId']}
+    [INFO] Polly config: engine {config['polly']['Engine']}, voice {config['polly']['VoiceId']}
+    [INFO] Log level: {config['log_level']}
+
+    [INFO] Hit ENTER to interrupt Amazon Bedrock. After you can continue speaking!
+    [INFO] Go ahead with the voice chat with Amazon Bedrock!
+    *************************************************************
+    '''
+    print(info_text) 
+
+
+    ## 难道真的是主循环就这么一点？
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(MicStream().basic_transcribe())
+    except (KeyboardInterrupt, Exception) as e:
+        print("RuntimeError:",str(e))

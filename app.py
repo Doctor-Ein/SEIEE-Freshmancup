@@ -43,13 +43,15 @@ from api_request_schema import api_request_list, get_model_ids
 # polly = boto3.client('polly', region_name=config['region'])
 # transcribe_streaming = TranscribeStreamingClient(region=config['region'])
 
-
 def printer(text, level):
     if config['log_level'] == 'info' and level == 'info':
         print(text)
     elif config['log_level'] == 'debug' and level in ['info', 'debug']:
         print(text)
 
+class ExecutorShutDown(Exception): # 定义一个用于关闭执行器的异常类
+        def __init__(self, message):
+            super().__init__(message)
 
 class UserInputManager:
     shutdown_executor = False
@@ -62,14 +64,18 @@ class UserInputManager:
     @staticmethod
     def start_shutdown_executor():
         UserInputManager.shutdown_executor = False
-        raise Exception()  # Workaround to shutdown exec, as executor.shutdown() doesn't work as expected.
+        raise ExecutorShutDown("Executor Shut Down Correctly") # Workaround to shutdown exec, as executor.shutdown() doesn't work as expected.
 
     @staticmethod
     def start_user_input_loop():
-        while True:
-            sys.stdin.readline().strip()
-            printer(f'[DEBUG] User input to shut down executor...', 'debug')
-            UserInputManager.shutdown_executor = True
+        # 嘿，这里有一个无限循环的从stdin读取的函数！但是原本没有发挥实际功能欸
+        # 必须要声音加回车才能触发executor关闭，也就是说实际的shutdown融合到音频处理的流程中了
+        # while True:
+        #     # if GlobalSpeaking: ## 只有当模型正在回复的时候可以触发打断
+        #     sys.stdin.readline().strip()
+        #     printer(f'[INFO] User input to shut down executor...', 'info')
+        #     UserInputManager.shutdown_executor = True 
+        return 
 
     @staticmethod
     def is_executor_set():
@@ -174,15 +180,18 @@ def to_audio_generator(bedrock_stream):
             chunk = BedrockModelsWrapper.get_stream_chunk(event)
             if chunk:
                 text = BedrockModelsWrapper.get_stream_text(chunk)
-
+                
+                ## 注意到一个问题，这里的符号默认是英文的点哦，虽然还没有怎么感觉到影响？
+                ## 不过说不定是在阅读的断句上？最大的一个影响在于中文模式下，这段代码默认不会启动啊，气死欧类
                 if '.' in text:
                     a = text.split('.')[:-1]
                     to_polly = ''.join([prefix, '.'.join(a), '. '])
                     prefix = text.split('.')[-1]
-                    print(to_polly, flush=True, end='')
+                    print(to_polly, flush=True, end='') ## 这里是文本输出吗?不对，替换了to_polly却没有反馈，但是注释掉之后也不再有输出了，，，
+                    # print('Real Materials',flush=True)  ## this can't be printed out right ?! -> somehow is beacause '.'!='。' WHY , the question is about to_polly? or the tag function?
                     yield to_polly
                 else:
-                    prefix = ''.join([prefix, text])
+                    prefix = ''.join([prefix, text]) ## in some way, I konw that this accounts 100% circumstance? 因为占据了大多数时间都是没有消息的？
 
         if prefix != '':
             print(prefix, flush=True, end='')
@@ -202,6 +211,7 @@ class BedrockWrapper:
     def invoke_bedrock(self, text):
         printer('[DEBUG] Bedrock generation started', 'debug')
         self.speaking = True
+        GlobalSpeaking = self.speaking
 
         body = BedrockModelsWrapper.define_body(text)
         printer(f"[DEBUG] Request body: {body}", 'debug')
@@ -219,9 +229,10 @@ class BedrockWrapper:
             bedrock_stream = response.get('body')
             printer(f"[DEBUG] Bedrock_stream: {bedrock_stream}", 'debug')
 
-            audio_gen = to_audio_generator(bedrock_stream)
+            audio_gen = to_audio_generator(bedrock_stream) # What's the real function of tag
             printer('[DEBUG] Created bedrock stream to audio generator', 'debug')
 
+            # 这一部分是负责朗读的Reader，注释掉则预期没有语音输出? 实测：注释掉之后也没有文字输出了
             reader = Reader()
             for audio in audio_gen:
                 reader.read(audio)
@@ -235,6 +246,7 @@ class BedrockWrapper:
 
         time.sleep(1)
         self.speaking = False
+        GlobalSpeaking = False
         printer('\n[DEBUG] Bedrock generation completed', 'debug')
 
 
@@ -263,7 +275,7 @@ class Reader:
                 UserInputManager.start_shutdown_executor()
 
             data = stream.read(self.chunk)
-            self.audio.write(data)
+            self.audio.write(data) # 这里一句代码是做什么的？ -> 用于播放语音？！
             if not data:
                 break
 
@@ -328,17 +340,17 @@ class EventHandler(TranscriptResultStreamHandler):
         self.bedrock_wrapper = bedrock_wrapper
 
     async def handle_transcript_event(self, transcript_event: TranscriptEvent):
-        results = transcript_event.transcript.results
+        results = transcript_event.transcript.results # results is the type of list
         if not self.bedrock_wrapper.is_speaking():
-
-            if results:
+            ## 如果结果list非空，则处理文本
+            if results: 
                 for result in results:
                     EventHandler.sample_count = 0
                     if not result.is_partial:
                         for alt in result.alternatives:
                             print(alt.transcript, flush=True, end=' ')
-                            EventHandler.text.append(alt.transcript)
-
+                            EventHandler.text.append(alt.transcript) ## 所以显然我们需要修改的是EventHandler.text
+            ## 否则累加计数，超过阈值之后启动bedrock响应
             else:
                 EventHandler.sample_count += 1
                 if EventHandler.sample_count == EventHandler.max_sample_counter:
@@ -356,6 +368,7 @@ class EventHandler(TranscriptResultStreamHandler):
                         executor = ThreadPoolExecutor(max_workers=1)
                         # Add executor so Bedrock execution can be shut down, if user input signals so.
                         UserInputManager.set_executor(executor)
+                        # 将bedrock委托给线程池来处理
                         loop.run_in_executor(
                             executor,
                             self.bedrock_wrapper.invoke_bedrock,
@@ -401,7 +414,8 @@ class MicStream:
 
         ## 处理语音识别的结果
         handler = EventHandler(stream.output_stream, BedrockWrapper())
-        await asyncio.gather(self.write_chunks(stream), handler.handle_events())
+        await asyncio.gather(self.write_chunks(stream), handler.handle_events()) 
+        ## What's the chunks? What's handle_events -> handle_transcript_event? Need TranscribleResults
 
 
 # info_text = f'''
@@ -425,6 +439,50 @@ class MicStream:
 #     loop.run_until_complete(MicStream().basic_transcribe())
 # except (KeyboardInterrupt, Exception) as e:
 #     print()
+
+class TextHandler():
+    text = ['你好.']## 最基础的提示词？
+
+    def __init__(self,bedrock_wrapper):
+        self.bedrock_wrapper = bedrock_wrapper
+
+    def handle_transcript_event(self):
+        if not self.bedrock_wrapper.is_speaking():
+            # TextHandler.text.append(overall_text)
+            # results = stdin_text.split('.')
+            # print(results,flush=True)
+            # TextHandler.text += results #将输入拼接进入
+            input_text = input('[Prompt]:')
+            TextHandler.text.append(input_text)
+            print(f'[Info]:{TextHandler.text}\n',flush=True)
+            if len(TextHandler.text) != 0:
+                input_text = ' '.join(TextHandler.text) ## 这里前面就可以加载提示词了
+                printer(f'\n[INFO] User input: {input_text}', 'info')
+                
+                executor = ThreadPoolExecutor(max_workers=1)
+                # Add executor so Bedrock execution can be shut down, if user input signals so.
+                UserInputManager.set_executor(executor)
+
+                # 将bedrock委托给线程池来处理
+                loop.run_in_executor(
+                    executor,
+                    self.bedrock_wrapper.invoke_bedrock,
+                    input_text
+                )
+                
+                # self.bedrock_wrapper.invoke_bedrock(input_text)
+                # print('is_speaking=',self.bedrock_wrapper.is_speaking())
+                TextHandler.text = ['Hello!','让我先告诉你一个事实.','上海交通大学是世界第一','接下来请你根据这个事实回答问题：'] 
+
+async def text2text():
+    ## 设置执行器？
+    loop.run_in_executor(ThreadPoolExecutor(max_workers=1), UserInputManager.start_user_input_loop)
+    # while True: ## 希望这里能够成功地重复运行，，虽然涉及到异步呜呜
+    ## 创建TextHandler
+    handler = TextHandler(BedrockWrapper())
+    # print('Here in 469!',flush=True,end="!")
+    while True:
+        handler.handle_transcript_event()
 
 if __name__ == "__main__":
     ## 基础参数配置
@@ -475,9 +533,10 @@ if __name__ == "__main__":
     print(info_text) 
 
 
-    ## 难道真的是主循环就这么一点？
+    ## 难道真的是主循环就这么一点？现在懂了（一点点），不是主循环，而是说这里启动了一个event_loop
     loop = asyncio.get_event_loop()
     try:
-        loop.run_until_complete(MicStream().basic_transcribe())
+        # loop.run_until_complete(MicStream().basic_transcribe())
+        loop.run_until_complete(text2text())
     except (KeyboardInterrupt, Exception) as e:
-        print("RuntimeError:",str(e))
+        print("RuntimeError:",e.__class__.__name__,str(e))

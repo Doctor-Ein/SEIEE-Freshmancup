@@ -347,7 +347,7 @@ class EventHandler(TranscriptResultStreamHandler):
                 for result in results:
                     EventHandler.sample_count = 0
                     if not result.is_partial:
-                        for alt in result.alternatives:
+                        for alt in result.alternatives: # 神秘备选结果，从测试结果看下来就是一种备选
                             print(alt.transcript, flush=True, end=' ')
                             EventHandler.text.append(alt.transcript) ## 所以显然我们需要修改的是EventHandler.text
             ## 否则累加计数，超过阈值之后启动bedrock响应
@@ -476,8 +476,6 @@ class TextHandler():
                 # SecondPrePrompt :这里是第二次对话即以后
 
 async def text2text():
-    ## 设置执行器？
-    loop.run_in_executor(ThreadPoolExecutor(max_workers=1), UserInputManager.start_user_input_loop)
     # while True: ## 希望这里能够成功地重复运行，，虽然涉及到异步呜呜
     ## 创建TextHandler
     handler = TextHandler(BedrockWrapper())
@@ -537,7 +535,7 @@ if __name__ == "__main__":
     ## 难道真的是主循环就这么一点？现在懂了（一点点），不是主循环，而是说这里启动了一个event_loop
     loop = asyncio.get_event_loop()
     try:
-        # loop.run_until_complete(MicStream().basic_transcribe())
-        loop.run_until_complete(text2text())
+        loop.run_until_complete(MicStream().basic_transcribe())
+        # loop.run_until_complete(text2text())
     except (KeyboardInterrupt, Exception) as e:
         print("RuntimeError:",e.__class__.__name__,str(e))

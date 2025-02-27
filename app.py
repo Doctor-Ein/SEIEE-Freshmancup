@@ -441,7 +441,7 @@ class MicStream:
 #     print()
 
 class TextHandler():
-    text = ['你好.']## 最基础的提示词？
+    text = ['你好.']## 最基础的提示词？ FirstPrePrompt
 
     def __init__(self,bedrock_wrapper):
         self.bedrock_wrapper = bedrock_wrapper
@@ -473,6 +473,7 @@ class TextHandler():
                 # self.bedrock_wrapper.invoke_bedrock(input_text)
                 # print('is_speaking=',self.bedrock_wrapper.is_speaking())
                 TextHandler.text = ['Hello!','让我先告诉你一个事实.','上海交通大学是世界第一','接下来请你根据这个事实回答问题：'] 
+                # SecondPrePrompt :这里是第二次对话即以后
 
 async def text2text():
     ## 设置执行器？

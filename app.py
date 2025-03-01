@@ -1,6 +1,8 @@
 import asyncio
 import BW
+import json
 import sounddevice
+import PromptEngine
 from concurrent.futures import ThreadPoolExecutor
 
 class EventHandler(BW.TranscriptResultStreamHandler):
@@ -79,12 +81,12 @@ class MicStream:
         await asyncio.gather(self.write_chunks(stream), handler.handle_events()) 
 
 class TextHandler():
-    text = ['你好.']## 最基础的提示词？ FirstPrePrompt
+    text = ['你好.']## 最基础的提示词? FirstPrePrompt
 
     def __init__(self,bedrock_wrapper):
         self.bedrock_wrapper = bedrock_wrapper
 
-    def handle_transcript_event(self):
+    def handle_text_event(self):
         if not self.bedrock_wrapper.is_speaking():
 
             input_text = input('[Prompt]:')
@@ -93,22 +95,43 @@ class TextHandler():
             if len(TextHandler.text) != 0:
                 input_text = ' '.join(TextHandler.text) ## 这里前面就可以加载提示词了
                 BW.printer(f'\n[INFO] User input: {input_text}', 'info')
-                
                 executor = ThreadPoolExecutor(max_workers=1)
-
                 # 将bedrock委托给线程池来处理
                 loop.run_in_executor(
                     executor,
                     self.bedrock_wrapper.invoke_bedrock,
                     input_text
                 )
+                TextHandler.text = [] 
 
+    def handle_prompt_event(self,prompt):
+        if not self.bedrock_wrapper.is_speaking():
+            
+            TextHandler.text.append(prompt)
+
+            if len(TextHandler.text) != 0:
+                input_text = ' '.join(TextHandler.text) ## 这里前面就可以加载提示词了
+                BW.printer(f'\n[INFO] User input: {input_text}', 'info')
+                executor = ThreadPoolExecutor(max_workers=1)
+                # 将bedrock委托给线程池来处理
+                loop.run_in_executor(
+                    executor,
+                    self.bedrock_wrapper.invoke_bedrock,
+                    input_text
+                )
                 TextHandler.text = [] 
 
 async def text2text():
     handler = TextHandler(BW.BedrockWrapper())
     while True:
-        handler.handle_transcript_event()
+        handler.handle_text_event()
+
+async def PromptMode():
+    handler = TextHandler(BW.BedrockWrapper())
+    with open("prompt_template.json") as f:
+        prompt_in_json = json.load(f)
+    prompt_str = json.dumps(prompt_in_json)
+    handler.handle_prompt_event(prompt_str)
 
 if __name__ == "__main__":
     BW.printInfo()
@@ -116,5 +139,6 @@ if __name__ == "__main__":
     try:
         # loop.run_until_complete(MicStream().basic_transcribe())
         loop.run_until_complete(text2text())
+        # loop.run_until_complete(PromptMode())
     except (KeyboardInterrupt, Exception) as e:
         print("RuntimeError:",e.__class__.__name__,str(e))

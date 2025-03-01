@@ -125,8 +125,8 @@ api_request_list = {
         "accept": "*/*",
         "body": {
             "prompt": "",
-            "max_tokens": 512,
-            "temperature": 0.2,
+            "max_tokens": 1024,
+            "temperature": 0.5,
             "top_p": 0.9
         }
     },    

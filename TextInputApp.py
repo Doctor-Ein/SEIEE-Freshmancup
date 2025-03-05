@@ -11,12 +11,16 @@ class TextInputApp:
     属性：
         root (tk.Tk): 主窗口对象
     """
-    def __init__(self, root):
+    def __init__(self, root:tk.Tk):
         """
         初始化应用程序界面和组件
         """
         self.root = root
         self.root.title("图形化输入输出")
+
+        # 输入的状态信息
+        self.input_event = tk.BooleanVar(value=False)
+        self.user_input=""
 
         # 配置网格布局
         self._setup_ui()
@@ -92,6 +96,11 @@ class TextInputApp:
         shortcuts = ["<Shift-Return>", "<Control-Return>", "<Command-Return>"]
         for shortcut in shortcuts:
             self.input_text.bind(shortcut, lambda e: self.submit_input())
+        self.input_text.bind("<Command-Delete>",lambda e:self.delete_all())
+    
+    def delete_all(self):
+        # 清空输入框
+        self.input_text.delete("1.0", tk.END)
 
     def put_output(self,text):
         self._append_output(f"{text}\n")
@@ -102,6 +111,27 @@ class TextInputApp:
         self.output_text.insert(tk.END, text)
         self.output_text.see(tk.END)
         self.output_text.config(state='disabled')
+    
+    def submit_input(self):
+        """提交用户输入"""
+        self.input_event.set(value=True) # 立即结束get_input阻塞状态，但是会等到submit_input结束
+        self.user_input = self.input_text.get("1.0", tk.END).strip()
+        if not self.user_input:
+            return
+
+        # 清空输入框
+        self.input_text.delete("1.0", tk.END)
+
+        # 在输出区域显示用户输入
+        self._append_output(f"[User]: {self.user_input}\n")
+
+    def get_input(self):
+        self.user_input = ""
+        self.input_text.config(state="normal")
+        self.root.wait_variable(self.input_event)
+        self.input_text.config(state="disabled")
+        self.input_event.set(value=False)
+        return self.user_input
 
     def _on_close(self):
         """关闭窗口时的清理操作"""

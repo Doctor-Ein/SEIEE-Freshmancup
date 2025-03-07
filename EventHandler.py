@@ -150,3 +150,21 @@ if __name__ == "__main__":
     thread.start()
     app.root.mainloop()
     thread.join()
+
+def ScriptsLoader(scripts:list): # 脚本加载器，只需要设定依次执行的脚本即可~
+    for script in scripts:
+        if callable(scripts):
+            yield script()
+
+def ModeSelect_Script():
+    app.put_output("[Mode Select]:选择展示的模块（输入数字选择）")
+    app.put_output("1. 提示词工程")
+    app.put_output("2. RAG")
+    app.put_output("3. 上下文记忆")
+    app.put_output("4. 多模态")
+    app.put_output("5. 多语言") # 主要是为了语音部分
+    mode = app.get_input()
+    return mode
+
+def Mode1_PromptEngine():
+    

@@ -103,7 +103,7 @@ class TextInputApp:
 
     def put_output(self,text):
         self._append_output(f"{text}\n")
-        print(f"输出日志：{text}")
+        print(f"{text}\n") #在禁用音频模式的情况下，代替输出调试信息
 
     def _append_output(self, text):
         """安全更新输出区域"""
@@ -126,7 +126,7 @@ class TextInputApp:
         self._append_output(f"[User]: {self.user_input}\n")
 
     def get_input(self):
-        self.user_input = ""
+        self.user_input = " "
         self.input_text.config(state="normal")
         self.root.wait_variable(self.input_event)
         self.input_text.config(state="disabled")

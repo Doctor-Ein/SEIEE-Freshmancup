@@ -1,5 +1,6 @@
 import asyncio
 import BW
+import json
 import time
 import sounddevice
 import concurrent.futures
@@ -146,24 +147,23 @@ class TextHandler():
 #     loop.close()
 def Mode1_PromptEngine():
     handler = TextHandler(BW.BedrockWrapper())
-    print("[Debug]:OK in Mode1")
     while True:
         if not handler.bedrock_wrapper.is_speaking():
             input_text = 'Question: ' + app.get_input()
             prompt = PromptEngine.AutoPromptRAG(input_text)
             BW.printer(f'\n[INFO] prompt: {prompt}', 'info')
-            BW.printer(f'\n[INFO] TextHandler.text: {TextHandler.text}', 'info')
             request_text = TextHandler.text
-            if len(TextHandler.text) != 0:
+            if len(input_text) != 0:
                 request_text.append(input_text) # 这里前面就可以加载提示词了
                 request_text.append(prompt) # 添加补充的知识点
+                BW.printer(f'\n[INFO] request_text: {request_text}', 'info')
 
                 # 将bedrock委托给线程池来处理，使用线程池异步调用 invoke_bedrock
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                    executor.submit(handler.bedrock_wrapper.invoke_bedrock, request_text)
+                    executor.submit(handler.bedrock_wrapper.invoke_bedrock,json.dumps(request_text))
 
 def Mode2_RAG():
-    return    
+    return
 
 def Mode3_Memory():
     return

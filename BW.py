@@ -12,7 +12,7 @@ from amazon_transcribe.model import TranscriptEvent, TranscriptResultStream
 from api_request_schema import api_request_list, get_model_ids
 from TextInputApp import app
 
-model_id = os.getenv('MODEL_ID', 'meta.llama3-70b-instruct-v1')
+model_id = os.getenv('MODEL_ID', 'anthropic.claude-3-sonnet-20240229-v1:0')
 aws_region = os.getenv('AWS_REGION', 'us-east-1')
 
 if model_id not in get_model_ids():
@@ -210,7 +210,7 @@ class BedrockWrapper:
             reader = Reader()
             for audio in audio_gen:
                 app.root.after(0,app.put_output,audio)
-                reader.read(audio)
+                # reader.read(audio) // 放弃语音
 
             reader.close()
 

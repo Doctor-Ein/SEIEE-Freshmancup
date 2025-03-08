@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import scrolledtext
 import threading
-import queue
 import time
 
 class TextInputApp:
@@ -104,6 +103,7 @@ class TextInputApp:
 
     def put_output(self,text):
         self._append_output(f"{text}\n")
+        print(f"输出日志：{text}")
 
     def _append_output(self, text):
         """安全更新输出区域"""

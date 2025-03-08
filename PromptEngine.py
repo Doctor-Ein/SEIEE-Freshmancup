@@ -1,6 +1,6 @@
 from knowledge_base import Knowledges as Ks
 
-tags = ["数据结构","数组","链表","栈","队列"]
+tags = ["数据结构","数组","链表","栈","队列","储存结构","场景"]
 
 def ScreenLabels(user_input:str): #从输入的文本中直接字符串匹配，获得目标labels
     labels = []
@@ -18,16 +18,24 @@ def ScreenItem(labels:list): # 以目标labels筛选合适的
     return res
 
 def item2prompt(res:list):
-    prompt = "<Konwledge>\n"
+    prompt = "\n<Konwledge>\n"
     for item in res:
         prompt += "input:"+str(item["input"])+":"
         prompt += "output:"+str(item["output"])+"\n"
     prompt+= "</Knowledge>\n"
     return prompt
 
+def AutoPromptRAG(user_input:str):
+    labels = ScreenLabels(user_input)
+    res = ScreenItem(labels)
+    prompt = item2prompt(res)
+    return prompt
+
+
+
 if __name__ == "__main__":
-    user_input = "什么是数据结构中的栈？"
-    print(item2prompt(ScreenItem(ScreenLabels(user_input)))) # 离谱嵌套调用
+    user_input = "什么是数据结构中的储存结构，它有什么样的应用场景"
+    print(AutoPromptRAG(user_input)) # 离谱嵌套调用
 
 # import json
 

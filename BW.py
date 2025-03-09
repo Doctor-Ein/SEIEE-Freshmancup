@@ -184,7 +184,7 @@ class BedrockWrapper:
     def is_speaking(self):
         return self.speaking
 
-    def invoke_bedrock(self, text):
+    def invoke_bedrock(self, text,mode):
         printer('[DEBUG] Bedrock generation started', 'debug')
         self.speaking = True
 
@@ -207,12 +207,8 @@ class BedrockWrapper:
             audio_gen = to_audio_generator(bedrock_stream) # generator
             printer('[DEBUG] Created bedrock stream to audio generator', 'debug')
 
-            reader = Reader()
             for audio in audio_gen:
                 app.root.after(0,app.put_output,audio)
-                # reader.read(audio) // 放弃语音
-
-            reader.close()
 
         except Exception as e:
             print(e)

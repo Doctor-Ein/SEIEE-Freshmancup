@@ -20,7 +20,7 @@ def ScreenItem(labels:list): # 以目标labels筛选合适的
 def item2prompt(res:list):
     prompt = "\n<Konwledge>\n"
     for item in res:
-        prompt += "input:"+str(item["input"])+":"
+        prompt += "input:"+str(item["input"])+":\t"
         prompt += "output:"+str(item["output"])+"\n"
     prompt+= "</Knowledge>\n"
     return prompt

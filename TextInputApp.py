@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import scrolledtext
+from tkinter import filedialog
 import threading
 import time
+import os
 
 class TextInputApp:
     """
@@ -20,6 +22,7 @@ class TextInputApp:
         # 输入的状态信息
         self.input_event = tk.BooleanVar(value=False)
         self.user_input=""
+        self.file_path=[]
 
         # 配置网格布局
         self._setup_ui()
@@ -65,7 +68,8 @@ class TextInputApp:
         )
         self.input_text.grid(
             row=1, 
-            column=0, 
+            column=0,
+            rowspan=2, 
             padx=(10, 5), 
             pady=5, 
             sticky="nsew"
@@ -76,11 +80,28 @@ class TextInputApp:
         self.submit_button = tk.Button(
             self.root, 
             text="提交", 
-            width=8,
+            width=10,
+            height=2,
             command=self.submit_input
         )
         self.submit_button.grid(
             row=1, 
+            column=1, 
+            padx=(5, 10), 
+            pady=5, 
+            sticky="nsew"
+        )
+
+        # 文件选取按钮
+        self.file_selection_button = tk.Button(
+            self.root, 
+            text="添加文件", 
+            width=10,
+            height=2,
+            command=self.select_file
+        )
+        self.file_selection_button.grid(
+            row=2, 
             column=1, 
             padx=(5, 10), 
             pady=5, 
@@ -126,16 +147,24 @@ class TextInputApp:
         self._append_output(f"[User]: {self.user_input}\n")
 
     def get_input(self):
-        self.user_input = " "
+        self.user_input = ""
         self.input_text.config(state="normal")
         self.root.wait_variable(self.input_event)
         self.input_text.config(state="disabled")
         self.input_event.set(value=False)
-        return self.user_input
+        files = self.file_path
+        self.file_path=[]
+        return [self.user_input,files]
+
+    def select_file(self):
+        self.file_path.append(filedialog.askopenfilename())
+        self._append_output(f"[User]：文件{self.file_path[-1]}已添加。本轮对话已上传{len(self.file_path)}个文件。\n")
+        return self.file_path
 
     def _on_close(self):
         """关闭窗口时的清理操作"""
         self.root.destroy()
+        os._exit(0)
 
 root = tk.Tk()
 app = TextInputApp(root)
@@ -148,11 +177,12 @@ if __name__ == "__main__":
         while True:
             # 获取输入
             user_input = app.get_input()
-            if user_input:
+            if user_input[0] or user_input[1]:
                 # 模拟处理耗时
                 time.sleep(0.5)
                 # 返回处理结果
-                app.put_output(f"处理结果：{user_input.upper()}")
+                app.put_output(f"文字输入：{user_input[0].upper()}")
+                app.put_output(f"文件输入：{user_input[1]}")
             time.sleep(0.1)
 
     threading.Thread(target=model_thread, args=(app,), daemon=True).start()

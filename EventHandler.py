@@ -5,6 +5,9 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from TextInputApp import app
 from PromptLab import promptlab
+import base64
+import os.path
+from knowledge_base import math_problems
 
 class TextHandler():
     text = promptlab["Mode1-B-1"]
@@ -16,7 +19,7 @@ def Mode1_PromptEngine():
     handler = TextHandler(BW.BedrockWrapper())
     while True:
         if not handler.bedrock_wrapper.is_speaking():
-            input_text = '\nQuestion: ' + app.get_input()
+            input_text = '\nQuestion: ' + app.get_input()[0]
             prompt = PromptEngine.AutoPromptRAG(input_text)
             BW.printer(f'\n[INFO] prompt: {prompt}', 'info')
             request_text = TextHandler.text
@@ -27,7 +30,7 @@ def Mode1_PromptEngine():
 
                 # 将bedrock委托给线程池来处理，使用线程池异步调用 invoke_bedrock
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                    executor.submit(handler.bedrock_wrapper.invoke_bedrock,request_text,mode = 1)
+                    executor.submit(handler.bedrock_wrapper.invoke_bedrock,request_text)
             TextHandler.text = promptlab["Mode1-B-2"]
 
 def Mode2_RAG():
@@ -37,7 +40,24 @@ def Mode3_Memory():
     return
 
 def Mode4_MultiModal():
-    return
+    handler = TextHandler(BW.BedrockWrapper())
+    while True:
+        if not handler.bedrock_wrapper.is_speaking():
+            info = app.get_input()
+            input_text = info[0]
+            files = info[1]
+            if files:
+                data = []
+                for file in files:
+                    with open(file, 'rb') as f:
+                        data.append([base64.b64encode(f.read()).decode(),os.path.splitext(file)[1]])
+                input_text += "在阅读以下例题及解答的基础上，仿照其思维模式，认真读取并解答图中呈现的数学问题，要求给出逐步的思考过程和结果，并且在验证你的答案后给出最终答案，图片中可能包含Latex公式。\n" + str(math_problems) 
+                BW.printer(f'\n[INFO] input_text: {input_text}', 'info')
+                BW.printer(f'\n[INFO] files: {files}', 'info')
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    executor.submit(handler.bedrock_wrapper.invoke_bedrock,input_text,data)
+                TextHandler.text = ""
 
 def Mode5_MultiLanguage():
     return
@@ -57,8 +77,7 @@ def ModeSelect_Script():
     app.put_output("3. 上下文记忆")
     app.put_output("4. 多模态")
     app.put_output("5. 多语言") # 主要是为了语音部分
-    mode = app.get_input()
-    app.put_output("[Mode1]:提示词工程\n")
+    mode = app.get_input()[0]
     switcher[mode]() # 接下来就是直接调用
 
 if __name__ == "__main__":
@@ -67,4 +86,4 @@ if __name__ == "__main__":
     app.root.mainloop()
     app._append_output(">?<")
     app.root.after(0,app.put_output,"[ModeSelect]:\n")
-    app.get_input()
+    app.get_input()[0]

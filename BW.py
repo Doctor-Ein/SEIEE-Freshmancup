@@ -68,7 +68,7 @@ def printer(text, level):
 class BedrockModelsWrapper:
 
     @staticmethod
-    def define_body(text):
+    def define_body(text, data=[]):
         model_id = config['bedrock']['api_request']['modelId']
         model_provider = model_id.split('.')[0]
         body = config['bedrock']['api_request']['body']
@@ -88,10 +88,25 @@ class BedrockModelsWrapper:
                 body['prompt'] = f"<s>[INST] {text}, please output in Chinese. [/INST]"
         elif model_provider == 'anthropic':
             if "claude-3" in model_id:
+                content = [
+                    {
+                        "type": "text",
+                        "text": text
+                    }
+                ]
+                for image in data:
+                    content.append({
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": "image/" + image[1][1:],
+                            "data": image[0]
+                        },
+                    })
                 body['messages'] = [
                     {
                         "role": "user",
-                        "content": text
+                        "content": content
                     }
                 ]
             else:
@@ -184,11 +199,13 @@ class BedrockWrapper:
     def is_speaking(self):
         return self.speaking
 
-    def invoke_bedrock(self, text,mode):
+    def invoke_bedrock(self, text, data=[]):
         printer('[DEBUG] Bedrock generation started', 'debug')
         self.speaking = True
 
-        body = BedrockModelsWrapper.define_body(text)
+        printer(f'[INFO] {text},{[type[1] for type in data]}', 'info')
+        body = BedrockModelsWrapper.define_body(text, data)
+        print(body)
         printer(f"[DEBUG] Request body: {body}", 'debug')
 
         try:

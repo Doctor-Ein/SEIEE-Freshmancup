@@ -7,6 +7,7 @@ from TextInputApp import app
 from PromptLab import promptlab
 import base64
 import os.path
+import app_MultiLanguage
 from knowledge_base import math_problems
 
 class TextHandler():
@@ -60,7 +61,29 @@ def Mode4_MultiModal():
                 TextHandler.text = ""
 
 def Mode5_MultiLanguage():
-    return
+    """
+    让用户选择语言，并返回对应的索引。
+    """    
+    app.put_output("Please select a language:")    
+    for i, prompt in enumerate(app_MultiLanguage.voicePromptList):        
+        app.put_output(f"{i}: {prompt}")        
+    while True:        
+        try:            
+            choice = int(app.get_input()[0])  
+            if 0 <= choice < len(app_MultiLanguage.voiceLanguageList):                
+                app_MultiLanguage.voiceIndex = choice
+                break
+            else:                
+                app.put_output("Invalid choice. Please try again.")        
+        except ValueError:            
+            app.put_output("Invalid input. Please enter a number.")
+    app_MultiLanguage.update_config()
+    app.put_output("[Status]:Config Update Correctly!")
+    app.put_output(app_MultiLanguage.info_text)
+    try:
+        app_MultiLanguage.loop.run_until_complete(app_MultiLanguage.MicStream().basic_transcribe())
+    except:
+        print("Runtime Error!")
 
 switcher ={
         "1":Mode1_PromptEngine,

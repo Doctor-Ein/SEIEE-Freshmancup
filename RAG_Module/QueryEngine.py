@@ -25,12 +25,24 @@ result = client.search(
     anns_field = "vector",  # 向量字段名
     search_params = search_params,  # 检索参数
     limit= 20 ,  # 返回的最相似向量数量
-    output_fields = ["text"]  # 输出字段
+    output_fields = ["text", "partition"]  # 输出字段
 )
 
 
-# 打印检索结果
+# 打印检索结果及其上下文
 for hits in result:
     for hit in hits:
         print(f"ID: {hit['id']}, Distance: {hit['distance']}, Text: {hit['entity'].get('text', 'N/A')}")
+        # print("Context:")
+        # partition_name = '_' + str(hit['entity'].get('partition', 'default'))
+        # # 构造 filter 字符串，确保 id 是整型
+        # filter_str = f"id >= {int(hit['id']) - 5} and id <= {int(hit['id']) + 5}"
+        # context_result = client.query(
+        #     collection_name=collection_name,
+        #     filter=filter_str,
+        #     output_fields=["id", "text"],
+        #     partition_names=[partition_name]
+        # )
+        # for context_hit in context_result:
+        #     print(f"  ID: {context_hit['id']}, Text: {context_hit['text']}")
         print('\n')

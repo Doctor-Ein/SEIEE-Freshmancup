@@ -6,7 +6,7 @@ from pymilvus import connections, MilvusClient, CollectionSchema, FieldSchema, D
 os.environ["TOKENIZERS_PARALLELISM"] = "false"  # 或者 "true"，取决于你的需求
 
 # 读取章节数据
-def load_chapters(filename):
+def load_chunks(filename):
     with open(filename, 'r', encoding='utf-8') as file:
         return json.load(file)
 
@@ -15,7 +15,7 @@ connections.connect("default", host="0.0.0.0", port="19530")
 
 # 主函数
 def main():
-    chapters = load_chapters("./chapters.json")
+    chunks = load_chunks("./chunks.json")
     collection_name = "Dream_of_the_Red_Chamber"
 
     # 使用llama_index加载本地模型
@@ -26,7 +26,8 @@ def main():
     fields = [
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=False),
         FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=65535),
-        FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=dim)
+        FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=dim),
+        FieldSchema(name="partition", dtype=DataType.INT64, auto_id = False)
     ]
     schema = CollectionSchema(fields, description="Chapters collection")
     client = MilvusClient(uri="http://0.0.0.0:19530")  # 修改了 MilvusClient 的初始化方式
@@ -37,24 +38,25 @@ def main():
     # 按照 title 分区插入数据
     id_counter = 0
     partition_counter = 0
-    for title, paragraphs in chapters.items():
+    for title, chunks in chunks.items():
         # 创建分区
-        partition_counter = partition_counter + 1
-        if not client.has_partition(collection_name=collection_name, partition_name='_'+str(partition_counter)):
-            client.create_partition(collection_name=collection_name, partition_name='_'+str(partition_counter))
+        partition_counter += 1
+        partition_name = '_' + str(partition_counter)
+        if not client.has_partition(collection_name=collection_name, partition_name=partition_name):
+            client.create_partition(collection_name=collection_name, partition_name=partition_name)
 
         # 准备插入的数据
         documents = []
-        for paragraph in paragraphs:
-            documents.append({"text": paragraph, "id": id_counter})
+        for chunk in chunks:
             id_counter += 1
+            documents.append({"text": chunk, "id": id_counter, "partition": partition_counter})
 
         # 获取嵌入向量
         embeddings = [embedding.get_text_embedding(doc["text"]) for doc in documents]
 
         # 插入数据到分区
-        data_to_insert = [{"id": doc["id"], "text": doc["text"], "vector": embedding} for doc, embedding in zip(documents, embeddings)]
-        client.insert(collection_name=collection_name, partition_name='_'+str(partition_counter), data=data_to_insert)
+        data_to_insert = [{"id": doc["id"], "text": doc["text"], "vector": embedding,"partition":doc["partition"]} for doc, embedding in zip(documents, embeddings)]
+        client.insert(collection_name=collection_name, partition_name=partition_name, data=data_to_insert)
 
     # 定义索引参数
     index_params = client.prepare_index_params()

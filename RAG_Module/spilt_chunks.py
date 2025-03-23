@@ -60,23 +60,17 @@ def process_chapters(input_path, output_path):
         # 保护关键实体
         protected_text = protect_entities(full_text)
         
-        # 在英文标点处添加分割保护
-        protected_text = re.sub(r'([.!?;])', r'\1##SPLIT##', protected_text)
-        
-        # 执行分块
+        # 执行分块（去除标点保护逻辑）
         raw_chunks = fixed_window_chunking(
             text=protected_text,
             chunk_size=chunk_size,
             overlap=overlap
         )
         
-        # 后处理：恢复标点结构和实体
+        # 后处理：恢复实体
         final_chunks = []
         for chunk in raw_chunks:
-            cleaned = chunk.replace('##SPLIT##', '').replace('##', '')
-            # 确保不以截断的标点开头
-            if cleaned and cleaned[0] in '.!?;':
-                cleaned = cleaned[1:].lstrip()
+            cleaned = chunk.replace('##', '')  # 去除实体保护标记
             if cleaned:
                 final_chunks.append(cleaned)
         

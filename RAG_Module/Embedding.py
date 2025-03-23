@@ -16,13 +16,14 @@ connections.connect("default", host="0.0.0.0", port="19530")
 # 主函数
 def main():
     chunks = load_chunks("./chunks.json")
+    chapters = load_chunks("./chapters.json")
     collection_name = "Dream_of_the_Red_Chamber"
 
     # 使用llama_index加载本地模型
-    embedding = HuggingFaceEmbedding(model_name="../models/bge-small-zh-v1.5")
+    embedding = HuggingFaceEmbedding(model_name="../models/bge-large-zh-v1.5")
 
     # 创建Milvus集合
-    dim = 512  # bge-small-zh-v1.5 模型生成的嵌入向量的维度是 512
+    dim = 1024  # bge-large-zh-v1.5 模型生成的嵌入向量的维度是 1024
     fields = [
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=False),
         FieldSchema(name="text", dtype=DataType.VARCHAR, max_length=65535),
@@ -47,6 +48,8 @@ def main():
 
         # 准备插入的数据
         documents = []
+        # id_counter += 1
+        # documents.append({"text": chapters.keys()[int(title) - 1], "id": id_counter, "partition": partition_counter})
         for chunk in chunks:
             id_counter += 1
             documents.append({"text": chunk, "id": id_counter, "partition": partition_counter})

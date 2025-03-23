@@ -5,14 +5,11 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from TextInputApp import app
 from PromptLab import promptlab
-import base64
 import os.path
-import app_MultiLanguage
-from knowledge_base import math_problems
+
 
 class TextHandler():
-    text = promptlab["Mode1-B-1"]
-
+    text = ""
     def __init__(self,bedrock_wrapper):
         self.bedrock_wrapper = bedrock_wrapper
 
@@ -22,7 +19,7 @@ def Mode1_PromptEngine():
         if not handler.bedrock_wrapper.is_speaking():
             input_text = '\nQuestion: ' + app.get_input()[0]
             prompt = PromptEngine.AutoPromptRAG(input_text)
-            BW.printer(f'\n[INFO] prompt: {prompt}', 'info')
+            # BW.printer(f'\n[INFO] prompt: {prompt}', 'info')
             request_text = TextHandler.text
             if len(input_text) != 0:
                 request_text += input_text      # 这里前面就可以加载提示词了
@@ -35,12 +32,35 @@ def Mode1_PromptEngine():
             TextHandler.text = promptlab["Mode1-B-2"]
 
 def Mode2_RAG():
-    return
+    from RAG_Module.QueryEngine import queryContext
+
+    app.put_output("[Mode2]:RAG")
+    handler = TextHandler(BW.BedrockWrapper())
+    handler.text = promptlab["Mode2-Debug-1"]
+    while True:
+        if not handler.bedrock_wrapper.is_speaking():
+            input_text = app.get_input()[0]
+            context = queryContext(input_text)
+            input_text = '\nQuestion: ' + input_text
+            # BW.printer(f'\n[INFO] prompt: {context}', 'info')
+            request_text = TextHandler.text
+            if len(input_text) != 0:
+                request_text += input_text      # 这里前面就可以加载提示词了
+                request_text += ''.join(context)         # 添加补充的知识点
+                BW.printer(f'\n[INFO] request_text: {request_text}', 'info')
+
+                # 将bedrock委托给线程池来处理，使用线程池异步调用 invoke_bedrock
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    executor.submit(handler.bedrock_wrapper.invoke_bedrock,request_text)
+            TextHandler.text = promptlab["Mode2-Debug-1"]
 
 def Mode3_Memory():
     return
 
 def Mode4_MultiModal():
+    from knowledge_base import math_problems
+    import base64
+
     handler = TextHandler(BW.BedrockWrapper())
     while True:
         if not handler.bedrock_wrapper.is_speaking():
@@ -61,6 +81,8 @@ def Mode4_MultiModal():
                 TextHandler.text = ""
 
 def Mode5_MultiLanguage():
+    import app_MultiLanguage
+
     """
     让用户选择语言，并返回对应的索引。
     """    

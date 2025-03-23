@@ -2,3 +2,8 @@ boto3==1.29.2
 amazon-transcribe==0.6.2
 sounddevice==0.4.6
 PyAudio==0.2.14
+llama-index==0.12.25
+llama-index-embeddings-huggingface==0.5.2
+transformers==4.50.0
+torch==2.6.0
+pymilvus==2.5.6

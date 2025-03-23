@@ -1,6 +1,5 @@
 import json
 import os
-from pathlib import Path
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from pymilvus import connections, MilvusClient, CollectionSchema, FieldSchema, DataType
 

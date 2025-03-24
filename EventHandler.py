@@ -14,6 +14,7 @@ class TextHandler():
         self.bedrock_wrapper = bedrock_wrapper
 
 def Mode1_PromptEngine():
+    app.put_output("[Mode1]:PromptEngine")
     handler = TextHandler(BW.BedrockWrapper())
     while True:
         if not handler.bedrock_wrapper.is_speaking():
@@ -55,12 +56,29 @@ def Mode2_RAG():
             TextHandler.text = promptlab["Mode2-Debug-1"]
 
 def Mode3_Memory():
-    return
+    app.put_output("[Mode3]:Memory")
+
+    data = []
+    history = []
+    handler = TextHandler(BW.BedrockWrapper())
+    TextHandler.text = promptlab["Mode3-Debug-1"]
+    while True:
+        if not handler.bedrock_wrapper.is_speaking():
+            input_text = app.get_input()[0]
+            if len(input_text) != 0:
+                request_text = handler.text + input_text
+                BW.printer(f'\n[INFO] request_text: {request_text}', 'info')
+                return_output = handler.bedrock_wrapper.invoke_bedrock(request_text,data,history) ## 不能在异步调用了，插入的顺序都乱了呜
+                # history.append({"role":"user","content":[{ "type": "text","text": input_text}]})
+                history.append({"role":"assistant","content":[{ "type": "text","text": return_output}]})
+                print('-' * 10 + 'Debug List' + '-' * 10)
+                print(history)
 
 def Mode4_MultiModal():
     from knowledge_base import math_problems
     import base64
 
+    app.put_output("[Mode4]:MultiModal")
     handler = TextHandler(BW.BedrockWrapper())
     while True:
         if not handler.bedrock_wrapper.is_speaking():
@@ -86,6 +104,7 @@ def Mode5_MultiLanguage():
     """
     让用户选择语言，并返回对应的索引。
     """    
+    app.put_output("[Mode5]:MultiLanguage")
     app.put_output("Please select a language:")    
     for i, prompt in enumerate(app_MultiLanguage.voicePromptList):        
         app.put_output(f"{i}: {prompt}")        

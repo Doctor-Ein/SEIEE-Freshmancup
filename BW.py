@@ -68,7 +68,7 @@ def printer(text, level):
 class BedrockModelsWrapper:
 
     @staticmethod
-    def define_body(text, data=[]):
+    def define_body(text, data=[],history = []):
         model_id = config['bedrock']['api_request']['modelId']
         model_provider = model_id.split('.')[0]
         body = config['bedrock']['api_request']['body']
@@ -99,16 +99,17 @@ class BedrockModelsWrapper:
                         "type": "image",
                         "source": {
                             "type": "base64",
-                            "media_type": "image/" + image[1][1:],
+                            "media_type": "image/" + image[1][1:], 
                             "data": image[0]
                         },
                     })
-                body['messages'] = [
-                    {
-                        "role": "user",
-                        "content": content
-                    }
-                ]
+                body['messages'] = history
+                body['messages'] += [
+                        {
+                            "role": "user",
+                            "content": content
+                        }
+                    ]
             else:
                 body['prompt'] = f'\n\nHuman: {text}\n\nAssistant:'
         elif model_provider == 'cohere':
@@ -199,12 +200,12 @@ class BedrockWrapper:
     def is_speaking(self):
         return self.speaking
 
-    def invoke_bedrock(self, text, data=[]):
+    def invoke_bedrock(self, text, data=[],history =[]):
         printer('[DEBUG] Bedrock generation started', 'debug')
         self.speaking = True
 
         printer(f'[INFO] {text},{[type[1] for type in data]}', 'info')
-        body = BedrockModelsWrapper.define_body(text, data)
+        body = BedrockModelsWrapper.define_body(text, data, history)
         print(body)
         printer(f"[DEBUG] Request body: {body}", 'debug')
 
@@ -224,8 +225,10 @@ class BedrockWrapper:
             audio_gen = to_audio_generator(bedrock_stream) # generator
             printer('[DEBUG] Created bedrock stream to audio generator', 'debug')
 
+            output = ''
             for audio in audio_gen:
                 app.root.after(0,app.put_output,audio)
+                output += audio
 
         except Exception as e:
             print(e)
@@ -235,6 +238,7 @@ class BedrockWrapper:
         time.sleep(1)
         self.speaking = False
         printer('\n[DEBUG] Bedrock generation completed', 'debug')
+        return output
 
 
 class Reader:

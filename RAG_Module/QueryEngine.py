@@ -31,11 +31,11 @@ def queryContext(QueryContext:str):
         output_fields = ["text", "partition"]  # 输出字段
     )
 
-    context = ["<context>"]
+    context = ["<context>\n"]
     for hits in result:
         for hit in hits:
             context.append(f"第{hit['entity'].get('partition','0')}章：{hit['entity'].get('text','N/A')}\n")
-    context.append("</context>")
+    context.append("\n</context>")
     return context
 
 if __name__ == "__main__":

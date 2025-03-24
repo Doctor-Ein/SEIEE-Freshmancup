@@ -34,7 +34,7 @@ api_request_list = {
         "body": {
             "messages": "",
             "max_tokens": 4096,
-            "temperature": 0.5,
+            "temperature": 0.2,
             "top_k": 250,
             "top_p": 1,
             "stop_sequences": [

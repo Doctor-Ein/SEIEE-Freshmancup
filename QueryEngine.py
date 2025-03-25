@@ -1,14 +1,11 @@
 from pymilvus import MilvusClient
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from pathlib import Path
 
 collection_name = "Dream_of_the_Red_Chamber"
 
-# 获取脚本所在的目录
-script_dir = Path(__file__).parent
 
 # 基于脚本目录构建模型路径
-model_path = (script_dir / "../models/bge-large-zh-v1.5").resolve()
+model_path = "./models/bge-large-zh-v1.5"
 
 # 使用 llama_index 加载本地模型
 embedding = HuggingFaceEmbedding(model_name = str(model_path))

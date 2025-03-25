@@ -7,7 +7,6 @@ from TextInputApp import app
 from PromptLab import promptlab
 import os.path
 
-
 class TextHandler():
     text = ""
     def __init__(self,bedrock_wrapper):
@@ -33,7 +32,7 @@ def Mode1_PromptEngine():
             TextHandler.text = promptlab["Mode1-B-2"]
 
 def Mode2_RAG():
-    from RAG_Module.QueryEngine import queryContext
+    from QueryEngine import queryContext
 
     app.put_output("[Mode2]:RAG")
     handler = TextHandler(BW.BedrockWrapper())

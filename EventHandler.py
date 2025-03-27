@@ -2,7 +2,7 @@ import concurrent.futures
 import threading
 import os.path
 
-import text_bedrock_wrapper
+from BedrockWrapper import BedrockWrapper_text
 from TextInputApp import app # app：图形化输入输出窗口的控制对象
 from PromptLab import promptlab 
 
@@ -15,7 +15,7 @@ class TextHandler():
 def Mode1_PromptEngine():
     import PromptEngine
     app.put_output("[Mode1]:PromptEngine")
-    handler = TextHandler(text_bedrock_wrapper.BedrockWrapper())
+    handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
     while True:
         if not handler.bedrock_wrapper.is_speaking():
             input_text = '\nQuestion: ' + app.get_input()[0]
@@ -25,7 +25,7 @@ def Mode1_PromptEngine():
             if len(input_text) != 0:
                 request_text += input_text      # 这里前面就可以加载提示词了
                 request_text += prompt          # 添加补充的知识点
-                text_bedrock_wrapper.printer(f'\n[INFO] request_text: {request_text}', 'info')
+                BedrockWrapper_text.printer(f'\n[INFO] request_text: {request_text}', 'info')
 
                 # 将bedrock委托给线程池来处理，使用线程池异步调用 invoke_bedrock
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
@@ -36,7 +36,7 @@ def Mode2_RAG():
     from QueryEngine import queryContext
     
     app.put_output("[Mode2]:RAG")
-    handler = TextHandler(text_bedrock_wrapper.BedrockWrapper())
+    handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
     handler.text = promptlab["Mode2-Debug-1"]
     while True:
         if not handler.bedrock_wrapper.is_speaking():
@@ -46,7 +46,7 @@ def Mode2_RAG():
             if len(input_text) != 0:
                 request_text += input_text          # 这里前面就可以加载提示词了
                 request_text += ''.join(context)    
-                text_bedrock_wrapper.printer(f'\n[INFO] request_text: {request_text}', 'info')
+                BedrockWrapper_text.printer(f'\n[INFO] request_text: {request_text}', 'info')
 
                 # 将bedrock委托给线程池来处理，使用线程池异步调用 invoke_bedrock
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
@@ -57,14 +57,14 @@ def Mode3_Memory():
 
     data = []
     history = []
-    handler = TextHandler(text_bedrock_wrapper.BedrockWrapper())
+    handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
     TextHandler.text = promptlab["Mode3-Debug-1"]
     while True:
         if not handler.bedrock_wrapper.is_speaking():
             input_text = app.get_input()[0]
             if len(input_text) != 0:
                 request_text = handler.text + input_text
-                text_bedrock_wrapper.printer(f'\n[INFO] request_text: {request_text}', 'info')
+                BedrockWrapper_text.printer(f'\n[INFO] request_text: {request_text}', 'info')
                 return_output = handler.bedrock_wrapper.invoke_bedrock(request_text,data,history) ## 不能在异步调用了，插入的顺序都乱了呜
                 history.append({"role":"user","content":[{ "type": "text","text": input_text}]})
                 history.append({"role":"assistant","content":[{ "type": "text","text": return_output}]})
@@ -74,7 +74,7 @@ def Mode4_MultiModal():
     import base64
 
     app.put_output("[Mode4]:MultiModal")
-    handler = TextHandler(text_bedrock_wrapper.BedrockWrapper())
+    handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
     while True:
         if not handler.bedrock_wrapper.is_speaking():
             info = app.get_input()
@@ -86,37 +86,37 @@ def Mode4_MultiModal():
                     with open(file, 'rb') as f:
                         data.append([base64.b64encode(f.read()).decode(),os.path.splitext(file)[1]])
                 input_text += "在阅读以下例题及解答的基础上，仿照其思维模式，认真读取并解答图中呈现的数学问题，要求给出逐步的思考过程和结果，并且在验证你的答案后给出最终答案，图片中可能包含Latex公式。\n" + str(math_problems) 
-                text_bedrock_wrapper.printer(f'\n[INFO] input_text: {input_text}', 'info')
-                text_bedrock_wrapper.printer(f'\n[INFO] files: {files}', 'info')
+                BedrockWrapper_text.printer(f'\n[INFO] input_text: {input_text}', 'info')
+                BedrockWrapper_text.printer(f'\n[INFO] files: {files}', 'info')
 
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                     executor.submit(handler.bedrock_wrapper.invoke_bedrock,input_text,data)
 
 def Mode5_MultiLanguage():
-    import audio_bedrock_wrapper
+    from BedrockWrapper import BedrockWrapper_audio
 
     """
     让用户选择语言，并返回对应的索引。
     """    
     app.put_output("[Mode5]:MultiLanguage")
     app.put_output("Please select a language:")    
-    for i, prompt in enumerate(audio_bedrock_wrapper.voicePromptList):        
+    for i, prompt in enumerate(BedrockWrapper_audio.voicePromptList):        
         app.put_output(f"{i}: {prompt}")        
     while True:        
         try:            
             choice = int(app.get_input()[0])  
-            if 0 <= choice < len(audio_bedrock_wrapper.voiceLanguageList):                
-                audio_bedrock_wrapper.voiceIndex = choice
+            if 0 <= choice < len(BedrockWrapper_audio.voiceLanguageList):                
+                BedrockWrapper_audio.voiceIndex = choice
                 break
             else:                
                 app.put_output("Invalid choice. Please try again.")        
         except ValueError:            
             app.put_output("Invalid input. Please enter a number.")
-    audio_bedrock_wrapper.update_config()
+    BedrockWrapper_audio.update_config()
     app.put_output("[Status]:Config Update Correctly!")
-    app.put_output(audio_bedrock_wrapper.info_text)
+    app.put_output(BedrockWrapper_audio.info_text)
     try:
-        audio_bedrock_wrapper.loop.run_until_complete(audio_bedrock_wrapper.MicStream().basic_transcribe())
+        BedrockWrapper_audio.loop.run_until_complete(BedrockWrapper_audio.MicStream().basic_transcribe())
     except:
         print("Runtime Error!")
 
@@ -139,7 +139,7 @@ def ModeSelect_Script():
     switcher[mode]() # 接下来就是直接调用
 
 if __name__ == "__main__":
-    text_bedrock_wrapper.printInfo()
+    BedrockWrapper_text.printInfo()
     thread = threading.Thread(target=ModeSelect_Script,daemon=True).start()
     app.root.mainloop()
     app._append_output(">?<")

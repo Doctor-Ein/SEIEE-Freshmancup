@@ -41,7 +41,7 @@ def queryContext(QueryContext:str):
             context1.append(f"{titles[str(hit['entity'].get('partition','0'))]}\n{hit['entity'].get('text','N/A')}\n")
 
     reranker = MilvusReranker()
-    reranked_context = reranker.rerank_documents(query = QueryContext, retrieved_documents = retrieved_documents, top_k = 5)
+    reranked_context = reranker.rerank_documents(query = QueryContext, retrieved_documents = retrieved_documents, top_k = 10)
     reranked_reranked_context = sorted(reranked_context,key = lambda x:x['metadata']['id'])
 
     context = ["<context>\n"]

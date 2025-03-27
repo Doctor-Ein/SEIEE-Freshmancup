@@ -9,7 +9,7 @@ from amazon_transcribe.client import TranscribeStreamingClient
 from amazon_transcribe.handlers import TranscriptResultStreamHandler
 from amazon_transcribe.model import TranscriptEvent, TranscriptResultStream
 
-from api_request_schema import api_request_list, get_model_ids
+from BedrockWrapper.api_request_schema import api_request_list, get_model_ids
 from TextInputApp import app
 
 model_id = os.getenv('MODEL_ID', 'anthropic.claude-3-sonnet-20240229-v1:0')

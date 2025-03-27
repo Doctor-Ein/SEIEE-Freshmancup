@@ -22,7 +22,7 @@ class MilvusReranker:
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name,
             local_files_only=True,
-            use_fast=False
+            use_fast=True
         )
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_name,

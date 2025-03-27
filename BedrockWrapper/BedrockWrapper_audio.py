@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from amazon_transcribe.client import TranscribeStreamingClient
 from amazon_transcribe.handlers import TranscriptResultStreamHandler
 from amazon_transcribe.model import TranscriptEvent, TranscriptResultStream
-from api_request_schema import api_request_list, get_model_ids
+from BedrockWrapper.api_request_schema import api_request_list, get_model_ids
 from TextInputApp import app
 
 model_id = os.getenv('MODEL_ID', 'meta.llama3-70b-instruct-v1')
@@ -407,12 +407,16 @@ class MicStream:
         # loop = asyncio.get_event_loop()
         loop.run_in_executor(ThreadPoolExecutor(max_workers=1), UserInputManager.start_user_input_loop)
 
+        lc=voiceLanguageList[voiceIndex]
+        if(lc=='cmn-CN'): # 为中文特判
+            lc='zh-CN'
+
         stream = await transcribe_streaming.start_stream_transcription(
-            language_code=voiceLanguageList[voiceIndex],
+            language_code=lc,
             media_sample_rate_hz=16000,
             media_encoding="pcm",
         )
-
+            
         handler = EventHandler(stream.output_stream, BedrockWrapper())
         await asyncio.gather(self.write_chunks(stream), handler.handle_events())
 

@@ -13,7 +13,7 @@ def load_chapters(filename):
 # 主函数
 def main():
     chapters = load_chapters("./chapters.json")
-    collection_name = "Dream_of_the_Red_Chamber"
+    collection_name = "Dream_of_the_Red_Chamber_IVF"
 
     # 使用llama_index加载本地模型
     embedding = HuggingFaceEmbedding(model_name="../models/bge-large-zh-v1.5")
@@ -57,12 +57,20 @@ def main():
 
     # 定义索引参数
     index_params = client.prepare_index_params()
+    
     index_params.add_index(
                             field_name = "vector",
                             index_type = "IVF_FLAT",  # 选择合适的索引类型
                             metric_type = "L2",       # 选择合适的度量类型
                             params = {"nlist": 128}   # 索引参数
                         )
+    
+    # index_params.add_index(
+    #                         field_name = "vector",
+    #                         index_name= "vector_index", 
+    #                         index_type = "FLAT",  # 选择合适的索引类型
+    #                         metric_type = "L2"    # 选择合适的度量类型
+    #                     )
     # 创建索引
     client.create_index(
         collection_name = collection_name,

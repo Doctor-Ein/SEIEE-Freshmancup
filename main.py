@@ -3,8 +3,8 @@ import threading
 import os.path
 
 from BedrockWrapper import BedrockWrapper_text
-from TextInputApp import app # app：图形化输入输出窗口的控制对象
-from PE_Package.PromptLab import promptlab
+from TextInputApp import app # app 图形化输入输出窗口的控制对象
+from PE_Package.PromptLab import promptlab # promptlab 存放调试的提示词
 
 
 class TextHandler():
@@ -13,39 +13,45 @@ class TextHandler():
         self.bedrock_wrapper = bedrock_wrapper
 
 def Mode1_PromptEngine():
-    import PE_Package.PromptEngine as PromptEngine
+    import PE_Package.PromptEngine as PromptEngine # PromptEngine 搜索和处理知识库
+
     app.put_output("[Mode1]:PromptEngine")
-    handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
+    handler = TextHandler(BedrockWrapper_text.BedrockWrapper()) # 初始化文本处理器，负责调用模型
+    TextHandler.text = promptlab["Mode1-B-2"] # TextHandler.text是预制的提示词
+
     while True:
         if not handler.bedrock_wrapper.is_speaking():
-            input_text = '\nQuestion: ' + app.get_input()[0]
-            prompt = PromptEngine.AutoPromptRAG(input_text)
-            # BW.printer(f'\n[INFO] prompt: {prompt}', 'info')
-            request_text = TextHandler.text
+            input_text = '\nQuestion: ' + app.get_input()[0] # 阻塞式等待获取输入框的内容
+
+            prompt = PromptEngine.AutoPromptRAG(input_text) # 使用提示词引擎
+
+            request_text = TextHandler.text # request_text即是真实传递的调用文本 
             if len(input_text) != 0:
-                request_text += input_text      # 这里前面就可以加载提示词了
+                request_text += input_text      # 连接输入的文本
                 request_text += prompt          # 添加补充的知识点
                 BedrockWrapper_text.printer(f'\n[INFO] request_text: {request_text}', 'info')
 
                 # 将bedrock委托给线程池来处理，使用线程池异步调用 invoke_bedrock
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                     executor.submit(handler.bedrock_wrapper.invoke_bedrock,request_text)
-            TextHandler.text = promptlab["Mode1-B-2"]
 
 def Mode2_RAG():
     from RAG_Package.QueryEngine import queryContext
     
     app.put_output("[Mode2]:RAG")
-    handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
-    handler.text = promptlab["Mode2-Debug-1"]
+    handler = TextHandler(BedrockWrapper_text.BedrockWrapper()) # 初始化文本处理器，负责调用模型
+    handler.text = promptlab["Mode2-Debug-1"] # TextHandler.text是预制的提示词
+
     while True:
         if not handler.bedrock_wrapper.is_speaking():
-            input_text = app.get_input()[0]
-            context = queryContext(input_text)
-            request_text = TextHandler.text
+            input_text = app.get_input()[0] # 阻塞式等待获取输入框的内容
+
+            context = queryContext(input_text) # 使用queryContext，传入提问内容查询相关上下文
+
+            request_text = TextHandler.text # request_text即是真实传递的调用文本 
             if len(input_text) != 0:
-                request_text += input_text          # 这里前面就可以加载提示词了
-                request_text += ''.join(context)    
+                request_text += input_text 
+                request_text += ''.join(context)  # 添加上下文内容
                 BedrockWrapper_text.printer(f'\n[INFO] request_text: {request_text}', 'info')
 
                 # 将bedrock委托给线程池来处理，使用线程池异步调用 invoke_bedrock
@@ -55,19 +61,21 @@ def Mode2_RAG():
 def Mode3_Memory():
     app.put_output("[Mode3]:Memory")
 
-    data = []
-    history = []
-    handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
+    history = [] # 存储对话历史的列表
+    handler = TextHandler(BedrockWrapper_text.BedrockWrapper()) 
     TextHandler.text = promptlab["Mode3-Debug-1"]
     while True:
         if not handler.bedrock_wrapper.is_speaking():
-            input_text = app.get_input()[0]
+            input_text = app.get_input()[0] # 阻塞式等待获取输入框的内容
+
             if len(input_text) != 0:
-                request_text = handler.text + input_text
+                request_text = TextHandler.text + input_text
                 BedrockWrapper_text.printer(f'\n[INFO] request_text: {request_text}', 'info')
-                return_output = handler.bedrock_wrapper.invoke_bedrock(request_text,data,history) ## 不能在异步调用了，插入的顺序都乱了呜
-                history.append({"role":"user","content":[{ "type": "text","text": input_text}]})
-                history.append({"role":"assistant","content":[{ "type": "text","text": return_output}]})
+
+                return_output = handler.bedrock_wrapper.invoke_bedrock(request_text,history=history) ## 为了不混乱对话历史的顺序，不能异步调用噜
+
+                history.append({"role":"user","content":[{ "type": "text","text": input_text}]}) # 向对话历史中，插入用户输入（取出了提示词）
+                history.append({"role":"assistant","content":[{ "type": "text","text": return_output}]}) # 向对话历史中，插入模型回复
 
 def Mode4_MultiModal():
     from PE_Package.knowledge_base import math_problems
@@ -75,17 +83,21 @@ def Mode4_MultiModal():
 
     app.put_output("[Mode4]:MultiModal")
     handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
+    TextHandler.text = promptlab['Mode4-Debug-1']
     while True:
         if not handler.bedrock_wrapper.is_speaking():
-            info = app.get_input()
-            input_text = info[0]
-            files = info[1]
+            info = app.get_input() # 阻塞式等待用过乎提交输入
+
+            input_text = info[0] # 获取输入框的内容
+            files = info[1] # 获取提交的图片文件
+
             if files:
-                data = []
+                data = [] # data存放base64编码后的图像数据
                 for file in files:
                     with open(file, 'rb') as f:
-                        data.append([base64.b64encode(f.read()).decode(),os.path.splitext(file)[1]])
-                input_text += "在阅读以下例题及解答的基础上，仿照其思维模式，认真读取并解答图中呈现的数学问题，要求给出逐步的思考过程和结果，并且在验证你的答案后给出最终答案，图片中可能包含Latex公式。\n" + str(math_problems) 
+                        data.append([base64.b64encode(f.read()).decode(),os.path.splitext(file)[1]]) # 图像编码
+                
+                request_text = input_text + TextHandler.text + str(math_problems)
                 BedrockWrapper_text.printer(f'\n[INFO] input_text: {input_text}', 'info')
                 BedrockWrapper_text.printer(f'\n[INFO] files: {files}', 'info')
 

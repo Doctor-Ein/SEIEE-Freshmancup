@@ -17,7 +17,7 @@ def Mode1_PromptEngine():
 
     app.put_output("[Mode1]:PromptEngine")
     handler = TextHandler(BedrockWrapper_text.BedrockWrapper()) # 初始化文本处理器，负责调用模型
-    TextHandler.text = promptlab["Mode1-B-2"] # TextHandler.text是预制的提示词
+    TextHandler.text = promptlab["PromptEngineeringPart1"] # TextHandler.text是预制的提示词
 
     while True:
         if not handler.bedrock_wrapper.is_speaking():
@@ -83,7 +83,7 @@ def Mode4_MultiModal():
 
     app.put_output("[Mode4]:MultiModal")
     handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
-    TextHandler.text = promptlab['Mode4-Debug-1']
+    TextHandler.text = promptlab["Multimodal"]
     while True:
         if not handler.bedrock_wrapper.is_speaking():
             info = app.get_input() # 阻塞式等待用过乎提交输入

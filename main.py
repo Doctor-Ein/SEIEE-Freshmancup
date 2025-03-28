@@ -98,11 +98,10 @@ def Mode4_MultiModal():
                         data.append([base64.b64encode(f.read()).decode(),os.path.splitext(file)[1]]) # 图像编码
                 
                 request_text = input_text + TextHandler.text + str(math_problems)
-                BedrockWrapper_text.printer(f'\n[INFO] input_text: {input_text}', 'info')
-                BedrockWrapper_text.printer(f'\n[INFO] files: {files}', 'info')
+                BedrockWrapper_text.printer(f'\n[INFO] input_text: {request_text}', 'info')
 
                 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                    executor.submit(handler.bedrock_wrapper.invoke_bedrock,input_text,data)
+                    executor.submit(handler.bedrock_wrapper.invoke_bedrock,request_text,data)
 
 def Mode5_MultiLanguage():
     from BedrockWrapper import BedrockWrapper_audio
@@ -112,9 +111,9 @@ def Mode5_MultiLanguage():
     """    
     app.put_output("[Mode5]:MultiLanguage")
     app.put_output("Please select a language:")    
-    for i, prompt in enumerate(BedrockWrapper_audio.voicePromptList):        
-        app.put_output(f"{i}: {prompt}")        
-    while True:        
+    for i, prompt in enumerate(BedrockWrapper_audio.voicePromptList): # 输出可选项的提示
+        app.put_output(f"{i}: {prompt}")
+    while True:
         try:            
             choice = int(app.get_input()[0])  
             if 0 <= choice < len(BedrockWrapper_audio.voiceLanguageList):                
@@ -124,13 +123,15 @@ def Mode5_MultiLanguage():
                 app.put_output("Invalid choice. Please try again.")        
         except ValueError:            
             app.put_output("Invalid input. Please enter a number.")
-    BedrockWrapper_audio.update_config()
-    app.put_output("[Status]:Config Update Correctly!")
-    app.put_output(BedrockWrapper_audio.info_text)
+
+    BedrockWrapper_audio.update_config() # 根据选择，修改相应的polly和transcribe配置
+    app.put_output("[Status]:Config Update Correctly!") 
+
     try:
+        ## 启动语音输入和对话循环
         BedrockWrapper_audio.loop.run_until_complete(BedrockWrapper_audio.MicStream().basic_transcribe())
-    except:
-        print("Runtime Error!")
+    except Exception as e:
+        print("Runtime Error!" + str(e))
 
 switcher ={
         "1":Mode1_PromptEngine,
@@ -140,7 +141,8 @@ switcher ={
         "5":Mode5_MultiLanguage
     }
 
-def ModeSelect_Script():
+def ModeSelect_Script(): 
+    ## 选择执行的模式
     app.put_output("[Mode Select]:选择展示的模块（输入数字选择）")
     app.put_output("1. 提示词工程")
     app.put_output("2. RAG")
@@ -151,9 +153,7 @@ def ModeSelect_Script():
     switcher[mode]() # 接下来就是直接调用
 
 if __name__ == "__main__":
-    BedrockWrapper_text.printInfo()
-    thread = threading.Thread(target=ModeSelect_Script,daemon=True).start()
-    app.root.mainloop()
-    app._append_output(">?<")
-    app.root.after(0,app.put_output,"[ModeSelect]:\n")
-    app.get_input()[0]
+    BedrockWrapper_text.printInfo() # 输出调试信息，模型版本和配置
+    thread = threading.Thread(target=ModeSelect_Script,daemon=True).start() # 启动一个新的线程
+    app.root.mainloop() # 图形化输入输出app需要运行在主循环中
+    app.put_output("[ModeSelect]:\n")

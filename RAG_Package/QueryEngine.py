@@ -33,7 +33,6 @@ def queryContext(QueryContext:str):
     query = get_first_sentence(QueryContext)
     print("[query]:" + query)
 
-
     # 将查询上下文转化为向量
     QueryVector = embedding.get_text_embedding(query)
 
@@ -56,10 +55,12 @@ def queryContext(QueryContext:str):
     #     for hit in hits:
     #         context1.append(f"{titles[str(hit['entity'].get('partition','0'))]}\n{hit['entity'].get('text','N/A')}\n")
 
-    reranker = MilvusReranker()
+    ## 重排模型
+    reranker = MilvusReranker() 
     reranked_context = reranker.rerank_documents(query = query, retrieved_documents = retrieved_documents, top_k = 5)
     reranked_reranked_context = sorted(reranked_context,key = lambda x:x['metadata']['id'])
 
+    ## 组合上下文内容
     context = ["<context>\n"]
     for doc in reranked_reranked_context:
         context.append(f"{titles[str(doc['metadata']['partition'])]}\n{doc['text']}\n")

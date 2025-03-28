@@ -70,7 +70,8 @@ def main():
     #                         index_name= "vector_index", 
     #                         index_type = "FLAT",  # 选择合适的索引类型
     #                         metric_type = "L2"    # 选择合适的度量类型
-    #                     )
+    #                        )
+    
     # 创建索引
     client.create_index(
         collection_name = collection_name,

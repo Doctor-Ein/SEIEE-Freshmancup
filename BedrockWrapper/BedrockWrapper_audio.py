@@ -14,21 +14,27 @@ from amazon_transcribe.model import TranscriptEvent, TranscriptResultStream
 from BedrockWrapper.api_request_schema import api_request_list, get_model_ids
 from TextInputApp import app
 
+# 设置模型ID和AWS区域
 model_id = os.getenv('MODEL_ID', 'meta.llama3-70b-instruct-v1')
 aws_region = os.getenv('AWS_REGION', 'us-east-1')
 
+# 验证模型ID是否有效
 if model_id not in get_model_ids():
     print(f'Error: Models ID {model_id} in not a valid model ID. Set MODEL_ID env var to one of {get_model_ids()}.')
     sys.exit(0)
 
-loop = asyncio.new_event_loop() # 这里希望用东西代替的啊
+# 创建新的事件循环
+loop = asyncio.new_event_loop()  # 这里希望用东西代替的啊
 
+# 定义语音列表
 voiceLanguageList = ['cmn-CN', 'en-US', 'ja-JP', 'ko-KR']
 voiceNameList = ['Zhiyu', 'Ivy', 'Takumi', 'Seoyeon']
 voicePromptList = ['Chinese', 'English', 'Japanese', 'Korean']
 
-voiceIndex = 0 # 默认配置为中文
+# 默认配置为中文
+voiceIndex = 0
 
+# API请求配置
 api_request = api_request_list[model_id]
 config = {
     'log_level': 'none',  # One of: info, debug, none
@@ -45,17 +51,20 @@ config = {
     }
 }
 
+# 更新配置函数
 def update_config():
     config['polly']['LanguageCode'] = voiceLanguageList[voiceIndex]
     config['polly']['VoiceId'] = voiceNameList[voiceIndex]
 
 
+# 初始化PyAudio和AWS服务客户端
 p = pyaudio.PyAudio()
 bedrock_runtime = boto3.client(service_name='bedrock-runtime', region_name=config['region'])
 polly = boto3.client('polly', region_name=config['region'])
 transcribe_streaming = TranscribeStreamingClient(region=config['region'])
 
 
+# 打印函数
 def printer(text, level):
     if config['log_level'] == 'info' and level == 'info':
         print(text)
@@ -63,6 +72,7 @@ def printer(text, level):
         print(text)
 
 
+# 用户输入管理类
 class UserInputManager:
     shutdown_executor = False
     executor = None
@@ -92,6 +102,7 @@ class UserInputManager:
         return UserInputManager.shutdown_executor
 
 
+# Bedrock模型包装类
 class BedrockModelsWrapper:
 
     @staticmethod
@@ -180,6 +191,7 @@ class BedrockModelsWrapper:
         return text
 
 
+# 音频生成器函数
 def to_audio_generator(bedrock_stream):
     prefix = ''
 
@@ -205,6 +217,7 @@ def to_audio_generator(bedrock_stream):
         print('\n')
 
 
+# Bedrock包装类
 class BedrockWrapper:
 
     def __init__(self):
@@ -253,6 +266,7 @@ class BedrockWrapper:
         printer('\n[DEBUG] Bedrock generation completed', 'debug')
 
 
+# 读取器类
 class Reader:
 
     def __init__(self):
@@ -288,50 +302,7 @@ class Reader:
         self.audio.close()
 
 
-# def aws_polly_tts(polly_text):
-#     printer(f'[INTO] Character count: {len(polly_text)}', 'debug')
-#     byte_stream_list = []
-#     polly_text_len = len(polly_text.split('.'))
-#     printer(f'LEN polly_text_len: {polly_text_len}', 'debug')
-#     for i in range(0, polly_text_len, 20):
-#         printer(f'{i}:{i + 20}', 'debug')
-#         polly_text_chunk = '. '.join(polly_text.split('. ')[i:i + 20])
-#         printer(f'polly_text_chunk LEN: {len(polly_text_chunk)}', 'debug')
-
-#         response = polly.synthesize_speech(
-#             Text=polly_text_chunk,
-#             Engine=config['polly']['Engine'],
-#             LanguageCode=config['polly']['LanguageCode'],
-#             VoiceId=config['polly']['VoiceId'],
-#             OutputFormat=config['polly']['OutputFormat'],
-#         )
-#         byte_stream = response['AudioStream']
-#         byte_stream_list.append(byte_stream)
-
-#     byte_chunks = []
-#     chunk = 1024
-#     for bs in byte_stream_list:
-#         while True:
-#             data = bs.read(chunk)
-#             byte_chunks.append(data)
-
-#             if not data:
-#                 bs.close()
-#                 break
-
-#     read_byte_chunks(b''.join(byte_chunks))
-
-
-# def read_byte_chunks(data):
-#     polly_stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, output=True)
-#     polly_stream.write(data)
-
-#     time.sleep(1)
-#     polly_stream.stop_stream()
-#     polly_stream.close()
-#     time.sleep(1)
-
-
+# 事件处理器类
 class EventHandler(TranscriptResultStreamHandler):
     text = []
     last_time = 0
@@ -381,6 +352,7 @@ class EventHandler(TranscriptResultStreamHandler):
                     EventHandler.sample_count = 0
 
 
+# 麦克风流类
 class MicStream:
 
     async def mic_stream(self):
@@ -421,6 +393,7 @@ class MicStream:
         await asyncio.gather(self.write_chunks(stream), handler.handle_events())
 
 
+# 信息文本
 info_text = f'''
 *************************************************************
 [INFO] Supported FM models: {get_model_ids()}.
@@ -435,10 +408,3 @@ info_text = f'''
 [INFO] Go ahead with the voice chat with Amazon Bedrock!
 *************************************************************
 '''
-# print(info_text)
-#
-# loop = asyncio.get_event_loop()
-# try:
-#     loop.run_until_complete(MicStream().basic_transcribe())
-# except (KeyboardInterrupt, Exception) as e:
-#     print()

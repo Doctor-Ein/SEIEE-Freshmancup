@@ -35,14 +35,17 @@ config = {
     }
 }
 
-
+# 初始化音频处理和AWS服务客户端
 p = pyaudio.PyAudio()
 bedrock_runtime = boto3.client(service_name='bedrock-runtime', region_name=config['region'])
 polly = boto3.client('polly', region_name=config['region'])
 transcribe_streaming = TranscribeStreamingClient(region=config['region'])
 
 def printInfo():
-    ## 输出信息文本
+    """
+    输出系统信息文本
+    功能描述：打印支持的模型、AWS区域、Amazon Bedrock模型、Polly配置和日志级别等信息
+    """
     info_text = f'''
     *************************************************************
     [INFO] Supported FM models: {get_model_ids()}.
@@ -60,15 +63,33 @@ def printInfo():
     print(info_text) 
 
 def printer(text, level):
+    """
+    打印日志信息
+    功能描述：根据日志级别打印信息
+    :param text: 要打印的文本
+    :param level: 日志级别（info或debug）
+    """
     if config['log_level'] == 'info' and level == 'info':
         print(text)
     elif config['log_level'] == 'debug' and level in ['info', 'debug']:
         print(text)
 
 class BedrockModelsWrapper:
+    """
+    Amazon Bedrock模型封装类
+    功能描述：定义请求体、获取流块和文本
+    """
 
     @staticmethod
     def define_body(text, data = [],history = []):
+        """
+        定义请求体
+        功能描述：根据不同的模型提供者定义请求体
+        :param text: 输入文本
+        :param data: 数据列表
+        :param history: 历史记录列表
+        :return: 请求体
+        """
         model_id = config['bedrock']['api_request']['modelId']
         model_provider = model_id.split('.')[0]
         body = config['bedrock']['api_request']['body']
@@ -118,10 +139,22 @@ class BedrockModelsWrapper:
 
     @staticmethod
     def get_stream_chunk(event):
+        """
+        获取流块
+        功能描述：从事件中获取流块
+        :param event: 事件对象
+        :return: 流块
+        """
         return event.get('chunk')
 
     @staticmethod
     def get_stream_text(chunk):
+        """
+        获取流文本
+        功能描述：根据不同的模型提供者从流块中获取文本
+        :param chunk: 流块
+        :return: 文本
+        """
         model_id = config['bedrock']['api_request']['modelId']
         model_provider = model_id.split('.')[0]
 
@@ -163,6 +196,12 @@ class BedrockModelsWrapper:
 
 
 def to_audio_generator(bedrock_stream):
+    """
+    转换为音频生成器
+    功能描述：将Bedrock流转换为音频生成器
+    :param bedrock_stream: Bedrock流
+    :return: 音频生成器
+    """
     prefix = ''
 
     if bedrock_stream:
@@ -188,14 +227,33 @@ def to_audio_generator(bedrock_stream):
 
 
 class BedrockWrapper:
+    """
+    Amazon Bedrock封装类
+    功能描述：调用Bedrock模型并处理响应
+    """
 
     def __init__(self):
+        """
+        初始化Amazon Bedrock封装类
+        """
         self.speaking = False
 
     def is_speaking(self):
+        """
+        检查是否正在说话
+        :return: 是否正在说话
+        """
         return self.speaking
 
     def invoke_bedrock(self, text, data = [],history = []):
+        """
+        调用Bedrock模型
+        功能描述：调用Bedrock模型并处理响应
+        :param text: 输入文本
+        :param data: 数据列表
+        :param history: 历史记录列表
+        :return: 输出文本
+        """
         printer('[DEBUG] Bedrock generation started', 'debug')
         self.speaking = True
         # printer(f'[INFO] {text},{[type[1] for type in data]}', 'info')
@@ -233,33 +291,3 @@ class BedrockWrapper:
         self.speaking = False
         printer('\n[DEBUG] Bedrock generation completed', 'debug')
         return output
-
-
-class Reader:
-
-    def __init__(self):
-        self.polly = boto3.client('polly', region_name=config['region'])
-        self.audio = p.open(format=pyaudio.paInt16, channels=1, rate=16000, output=True)
-        self.chunk = 1024
-
-    def read(self, data):
-        response = self.polly.synthesize_speech(
-            Text=data,
-            Engine=config['polly']['Engine'],
-            LanguageCode=config['polly']['LanguageCode'],
-            VoiceId=config['polly']['VoiceId'],
-            OutputFormat=config['polly']['OutputFormat'],
-        )
-
-        stream = response['AudioStream']
-
-        while True:
-            data = stream.read(self.chunk)
-            self.audio.write(data)
-            if not data:
-                break
-
-    def close(self):
-        time.sleep(1)
-        self.audio.stop_stream()
-        self.audio.close()

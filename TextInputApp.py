@@ -1,8 +1,6 @@
+import os
 import tkinter as tk
 from tkinter import scrolledtext, filedialog
-import threading
-import time
-import os
 from datetime import datetime
 
 class TextInputApp:
@@ -16,6 +14,7 @@ class TextInputApp:
     def __init__(self, root: tk.Tk):
         """
         初始化应用程序界面和组件
+        :param root: 主窗口对象
         """
         self.root = root
         self.root.title("图形化输入输出")
@@ -35,7 +34,10 @@ class TextInputApp:
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _init_dialogue_system(self):
-        """初始化对话记录系统"""
+        """
+        初始化对话记录系统
+        功能描述：创建对话记录文件并写入会话头信息
+        """
         # 确保Dialogue目录存在
         os.makedirs("Dialogue", exist_ok=True)
         
@@ -48,7 +50,10 @@ class TextInputApp:
             f.write(f"=== 对话会话开始于 {timestamp} ===\n\n")
 
     def _setup_ui(self):
-        """初始化用户界面组件"""
+        """
+        初始化用户界面组件
+        功能描述：配置网格布局并初始化输出区域、输入区域、提交按钮和文件选取按钮
+        """
         # 配置网格布局权重
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_rowconfigure(1, weight=0)
@@ -129,14 +134,20 @@ class TextInputApp:
         self._bind_shortcuts()
 
     def _bind_shortcuts(self):
-        """绑定快捷键"""
+        """
+        绑定快捷键
+        功能描述：绑定提交和清空输入框的快捷键
+        """
         shortcuts = ["<Shift-Return>", "<Control-Return>", "<Command-Return>"]
         for shortcut in shortcuts:
             self.input_text.bind(shortcut, lambda e: self.submit_input())
         self.input_text.bind("<Command-Delete>", lambda e: self.delete_all())
     
     def delete_all(self):
-        """清空输入框"""
+        """
+        清空输入框
+        功能描述：删除输入框中的所有内容
+        """
         self.input_text.delete("1.0", tk.END)
 
     def put_output(self, text):
@@ -151,14 +162,21 @@ class TextInputApp:
             f.write(f"{text}\n")
 
     def _append_output(self, text):
-        """安全更新输出区域"""
+        """
+        安全更新输出区域
+        功能描述：更新输出区域并滚动到最新内容
+        :param text: 要添加的文本
+        """
         self.output_text.config(state='normal')
         self.output_text.insert(tk.END, text)
         self.output_text.see(tk.END)
         self.output_text.config(state='disabled')
     
     def submit_input(self):
-        """提交用户输入"""
+        """
+        提交用户输入
+        功能描述：获取用户输入并显示在输出区域，同时记录到对话文件
+        """
         self.input_event.set(value=True)  # 结束get_input的阻塞状态
         self.user_input = self.input_text.get("1.0", tk.END).strip()
         if not self.user_input:
@@ -175,7 +193,11 @@ class TextInputApp:
             f.write(f"[User]: {self.user_input}\n")
 
     def get_input(self):
-        """获取用户输入"""
+        """
+        获取用户输入
+        功能描述：获取用户输入并返回输入内容和文件路径列表
+        :return: 用户输入内容和文件路径列表
+        """
         self.user_input = ""
         self.input_text.config(state="normal")
         self.root.wait_variable(self.input_event)
@@ -186,7 +208,11 @@ class TextInputApp:
         return [self.user_input, files]
 
     def select_file(self):
-        """选择文件并添加到当前会话"""
+        """
+        选择文件并添加到当前会话
+        功能描述：弹出文件选择对话框并添加选中的文件到当前会话
+        :return: 文件路径列表
+        """
         filepath = filedialog.askopenfilename()
         if filepath:  # 用户可能取消选择
             self.file_path.append(filepath)
@@ -199,7 +225,10 @@ class TextInputApp:
         return self.file_path
 
     def _on_close(self):
-        """关闭窗口时的清理操作"""
+        """
+        关闭窗口时的清理操作
+        功能描述：写入会话结束标记并关闭窗口
+        """
         # 写入会话结束标记
         with open(self.dialogue_file, 'a', encoding='utf-8') as f:
             f.write("\n=== 对话会话结束 ===\n")

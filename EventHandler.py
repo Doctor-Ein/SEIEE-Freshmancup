@@ -4,7 +4,7 @@ import os.path
 
 from BedrockWrapper import BedrockWrapper_text
 from TextInputApp import app # app：图形化输入输出窗口的控制对象
-from PromptLab import promptlab 
+from PE_Package.PromptLab import promptlab
 
 
 class TextHandler():
@@ -13,7 +13,7 @@ class TextHandler():
         self.bedrock_wrapper = bedrock_wrapper
 
 def Mode1_PromptEngine():
-    import PromptEngine
+    import PE_Package.PromptEngine as PromptEngine
     app.put_output("[Mode1]:PromptEngine")
     handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
     while True:
@@ -33,7 +33,7 @@ def Mode1_PromptEngine():
             TextHandler.text = promptlab["Mode1-B-2"]
 
 def Mode2_RAG():
-    from QueryEngine import queryContext
+    from RAG_Package.QueryEngine import queryContext
     
     app.put_output("[Mode2]:RAG")
     handler = TextHandler(BedrockWrapper_text.BedrockWrapper())
@@ -70,7 +70,7 @@ def Mode3_Memory():
                 history.append({"role":"assistant","content":[{ "type": "text","text": return_output}]})
 
 def Mode4_MultiModal():
-    from knowledge_base import math_problems
+    from PE_Package.knowledge_base import math_problems
     import base64
 
     app.put_output("[Mode4]:MultiModal")

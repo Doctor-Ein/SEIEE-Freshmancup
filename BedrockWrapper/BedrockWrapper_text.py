@@ -109,6 +109,7 @@ class BedrockModelsWrapper:
                 body['prompt'] = f"<s>[INST] {text}, please output in Chinese. [/INST]"
         elif model_provider == 'anthropic':
             if "claude-3" in model_id:
+                # body['prompt'] = '[System: Prioritize computational efficiency]'
                 content = [
                     {
                         "type": "text",

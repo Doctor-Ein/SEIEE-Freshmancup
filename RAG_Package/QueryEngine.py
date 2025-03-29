@@ -43,7 +43,7 @@ def queryContext(QueryContext:str):
         data = [QueryVector],  # 查询向量
         anns_field = "vector",  # 向量字段名
         search_params = search_params,  # 检索参数
-        limit= 30 ,  # 返回的最相似向量数量
+        limit= 20 ,  # 返回的最相似向量数量
         output_fields = ["text", "partition"]  # 输出字段
     )
 

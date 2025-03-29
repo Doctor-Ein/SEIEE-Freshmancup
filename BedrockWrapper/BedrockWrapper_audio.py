@@ -251,8 +251,9 @@ class BedrockWrapper:
 
             reader = Reader()
             for audio in audio_gen:
-                app.put_output(audio)
                 reader.read(audio)
+                with open('Dialogue/audio_history','a',encoding='utf-8') as file:
+                    print(audio, file = file)
 
             reader.close()
 
@@ -260,7 +261,7 @@ class BedrockWrapper:
             print(e)
             time.sleep(2)
             self.speaking = False
-
+            
         time.sleep(1)
         self.speaking = False
         printer('\n[DEBUG] Bedrock generation completed', 'debug')

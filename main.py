@@ -69,7 +69,7 @@ def Mode3_Memory():
             input_text = app.get_input()[0] # 阻塞式等待获取输入框的内容
 
             if len(input_text) != 0:
-                request_text = TextHandler.text + input_text
+                request_text = input_text + '\n' + TextHandler.text
                 BedrockWrapper_text.printer(f'\n[INFO] request_text: {request_text}', 'info')
 
                 return_output = handler.bedrock_wrapper.invoke_bedrock(request_text,history=history) ## 为了不混乱对话历史的顺序，不能异步调用噜

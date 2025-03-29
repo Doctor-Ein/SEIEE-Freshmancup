@@ -23,26 +23,26 @@
 ---
 
 ## 📝 **各文件用途**
-| 文件名                       | 作用                                            |
+| 文件名                       | 作用                                           |
 | ---------------------------- | ---------------------------------------------- |
-| `main.py`                    | **主程序入口**，协调各模块，执行核心逻辑          |
-| `TextInputApp.py`            | 提供 Terminal/GUI 交互的图形化输入输出           |
-| `PE_Package/PromptEngine.py` | 处理提示词优化，提高 LLM 生成质量                |
-| `PE_Package/PromptLab.py`    | 提示词测试的平台，存放调试好的提示词              |
-| `knowledge_base.py`          | 数据结构知识和数学的例题库，用于优化提示词工程     |
-| `RAG_Package/QueryEngine.py` | 处理查询请求，使用基于 RAG 的知识库检索           |
-| `RAG_Package/Reranker.py`    | 重新排序检索结果，提高 RAG 生成质量               |
-| `Embedding.py`               | 处理文本嵌入，将向量化的数据保存到Milvus          |
-| `chapters.json`              | 红楼梦文本 `data.txt` 分割处理后的主要数据        |
-| `api_request_schema.py`      | 由 Amazon 提供的许可模型及其配置表               |
-| `BedrockWrapper_text.py`     | 处理文本输入，集成了 Bedrock 的调用逻辑           |
-| `BedrockWrapper_audio.py`    | 处理音频输入，实现实时语音输出                    |
+| `main.py`                    | **主程序入口**，协调各模块，执行核心逻辑       |
+| `TextInputApp.py`            | 提供 Terminal/GUI 交互的图形化输入输出         |
+| `PE_Package/PromptEngine.py` | 处理提示词优化，提高 LLM 生成质量              |
+| `PE_Package/PromptLab.py`    | 提示词测试的平台，存放调试好的提示词           |
+| `knowledge_base.py`          | 数据结构知识和数学的例题库，用于优化提示词工程 |
+| `RAG_Package/QueryEngine.py` | 处理查询请求，使用基于 RAG 的知识库检索        |
+| `RAG_Package/Reranker.py`    | 重新排序检索结果，提高 RAG 生成质量            |
+| `Embedding.py`               | 处理文本嵌入，将向量化的数据保存到Milvus       |
+| `chapters.json`              | 红楼梦文本 `data.txt` 分割处理后的主要数据     |
+| `api_request_schema.py`      | 由 Amazon 提供的许可模型及其配置表             |
+| `BedrockWrapper_text.py`     | 处理文本输入，集成了 Bedrock 的调用逻辑        |
+| `BedrockWrapper_audio.py`    | 处理音频输入，实现实时语音输出                 |
 
 
 ## 🛠 **安装与使用**
 ### 环境依赖
 - *python 3.10* 版本，内置库和第三方库（参见`requirements.txt`），稳定的、可使用Claude的IP地域和网络环境
-- 可选的嵌入模型和重排模型，可在![huggingface.co]https://huggingface.co 下载
+- 可选的嵌入模型和重排模型，可在[huggingface.co](https://huggingface.co) 下载
 - *Docker* 本地部署或其他方式的 *Milvus* 向量数据库
 
 ### 安装方法
@@ -59,7 +59,7 @@
 - `bge-reranker-large`
 在每次使用时
 - 在终端切换到程序根目录，执行`conda activate LLM-Teacher`启用环境
-- 通过 *Docker* 启动本地 *Milvus* 服务（详见![Milvus]https://github.com/milvus-io/milvus，代码支持2.5.x 版本）
+- 通过 *Docker* 启动本地 *Milvus* 服务（详见[Milvus](https://github.com/milvus-io/milvus)，代码支持2.5.x 版本）
 - 如果需要替换`data.txt`，替换后请执行`python3 Dataset/Embedding.py`完成数据嵌入
 - 执行`python3 main.py`，启动我们的图形化输入输出，体验能力增强后的 LLM-Teacher 🎉🎉🎉
 

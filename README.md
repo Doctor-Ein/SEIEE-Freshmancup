@@ -119,7 +119,7 @@
 
 ## 🌟 *致谢*
 感谢以下个人和团队对项目的贡献：
-- [Meteor728](https://github.com/Meteor728)：感谢你为项目开发了*Multilingual*以及RAEDME的编写，代码很棒，文档也超用心~（这里夸夸不是她写的😃 Orz
+- [Meteor728](https://github.com/Meteor728)：感谢你为项目开发了*Multilingual*以及RAEDME的编写，代码很棒，文档也超用心，还有认真地管理了比赛的事项以及火锅非常好吃和开心😋~（这里夸夸是我写的😃 Orz
 - [StarDust](https://github.com/Rewind2Nowhere)：感谢你为项目开发*MultiModal*，并且在项目部分思路构建和Debug方面做出了卓越贡献（不是指1.5h修复4行代码🤣 Orz
 - [bleem](https://github.com/bleem？)：感谢你为项目进行了全面的测试，为每个模块调整适配有效的提示词，确保了项目的稳定性！伟大的提示词工程师！所有思想和努力都看到啦☺️，Orz
 - [Doctor-Ein](https://github.com/Doctor-Ein)：感谢自己没有哭哦~（来自队友的碎碎念：其实xlx commit了整个项目超过60%的代码，完成了从Milvus数据库构建到异步执行处理再到项目重构的大量工作，做出了巨大的贡献、巨大的牺牲和巨大的carry）
